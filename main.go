@@ -59,9 +59,6 @@ func webSocketHandler(room *Room, w http.ResponseWriter, r *http.Request) {
 	go read(room, conn)
 	go write(room, conn)
 }
-func handler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-}
 
 // MessageContainer is container of message webscoket recieved
 type MessageContainer struct {
@@ -82,8 +79,7 @@ func main() {
 	}
 	var httpServer http.Server
 	httpServer.Addr = ":28888"
-	http.HandleFunc("/ws", handler)
-	http.HandleFunc("/ws/send", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ws/", func(w http.ResponseWriter, r *http.Request) {
 		webSocketHandler(&room, w, r)
 	})
 	httpServer.ListenAndServe()
