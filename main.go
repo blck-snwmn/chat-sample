@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"path"
 
 	"github.com/gorilla/websocket"
 )
@@ -48,8 +49,9 @@ func write(room *Room, conn *websocket.Conn) {
 	}
 }
 
-func webSocketHandler(room *Room, w http.ResponseWriter, r *http.Request) {
-	log.Println("in")
+func webSocketHandler(root *ChatRoot, w http.ResponseWriter, r *http.Request) {
+	_, roomName := path.Split(r.RequestURI)
+	room := root.getRoom(roomName)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -66,6 +68,23 @@ type MessageContainer struct {
 	message []byte
 }
 
+// ChatRoot is Chat's root
+type ChatRoot struct {
+	rooms map[string]*Room
+}
+
+func (root *ChatRoot) getRoom(name string) *Room {
+	room, exist := root.rooms[name]
+	if !exist {
+		room = &Room{
+			conns:    make([]*websocket.Conn, 0),
+			recieved: make(chan MessageContainer),
+		}
+		root.rooms[name] = room
+	}
+	return room
+}
+
 //Room is chat room
 type Room struct {
 	conns    []*websocket.Conn
@@ -73,14 +92,14 @@ type Room struct {
 }
 
 func main() {
-	room := Room{
-		conns:    []*websocket.Conn{},
-		recieved: make(chan MessageContainer),
+	root := ChatRoot{
+		rooms: make(map[string]*Room),
 	}
+
 	var httpServer http.Server
 	httpServer.Addr = ":28888"
 	http.HandleFunc("/ws/", func(w http.ResponseWriter, r *http.Request) {
-		webSocketHandler(&room, w, r)
+		webSocketHandler(&root, w, r)
 	})
 	httpServer.ListenAndServe()
 }
