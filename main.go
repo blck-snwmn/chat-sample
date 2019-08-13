@@ -28,7 +28,7 @@ func read(room *Room, conn *websocket.Conn) {
 			msgType: msgType,
 			message: msg,
 		}
-		room.ch <- mc
+		room.recieved <- mc
 	}
 }
 
@@ -36,7 +36,7 @@ func write(room *Room, conn *websocket.Conn) {
 	defer conn.Close()
 	for {
 		select {
-		case mc := <-room.ch:
+		case mc := <-room.recieved:
 			for _, cn := range room.conns {
 				if err := cn.WriteMessage(mc.msgType, mc.message); err != nil {
 					log.Println(err)
@@ -71,14 +71,14 @@ type MessageContainer struct {
 
 //Room is chat room
 type Room struct {
-	conns []*websocket.Conn
-	ch    chan MessageContainer
+	conns    []*websocket.Conn
+	recieved chan MessageContainer
 }
 
 func main() {
 	room := Room{
-		conns: []*websocket.Conn{},
-		ch:    make(chan MessageContainer),
+		conns:    []*websocket.Conn{},
+		recieved: make(chan MessageContainer),
 	}
 	var httpServer http.Server
 	httpServer.Addr = ":28888"
