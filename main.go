@@ -17,6 +17,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// webscoketから読み込み
 func read(room *Room, conn *websocket.Conn) {
 	defer conn.Close()
 	for {
@@ -29,10 +30,12 @@ func read(room *Room, conn *websocket.Conn) {
 			msgType: msgType,
 			message: msg,
 		}
+		// room に対して受信したことを通知
 		room.recieved <- mc
 	}
 }
 
+// websocketへ書き込み
 func write(room *Room, conn *websocket.Conn) {
 	defer conn.Close()
 	for {
@@ -70,6 +73,7 @@ type MessageContainer struct {
 
 //Room is chat room
 type Room struct {
+	// このルームに接続しているconnection
 	conns    []*websocket.Conn
 	recieved chan MessageContainer
 }
