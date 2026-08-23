@@ -19,7 +19,11 @@ var upgrader = websocket.Upgrader{
 
 // webscoketから読み込み
 func read(room *Room, conn *websocket.Conn) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 	for {
 		msgType, msg, err := conn.ReadMessage()
 		if err != nil {
@@ -37,17 +41,18 @@ func read(room *Room, conn *websocket.Conn) {
 
 // websocketへ書き込み
 func write(room *Room, conn *websocket.Conn) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 	for {
-		select {
-		case mc := <-room.recieved:
-			for _, cn := range room.conns {
-				if err := cn.WriteMessage(mc.msgType, mc.message); err != nil {
-					log.Println(err)
-					return
-				}
+		mc := <-room.recieved
+		for _, cn := range room.conns {
+			if err := cn.WriteMessage(mc.msgType, mc.message); err != nil {
+				log.Println(err)
+				return
 			}
-		default:
 		}
 	}
 }
@@ -71,7 +76,7 @@ type MessageContainer struct {
 	message []byte
 }
 
-//Room is chat room
+// Room is chat room
 type Room struct {
 	// このルームに接続しているconnection
 	conns    []*websocket.Conn
@@ -88,5 +93,5 @@ func main() {
 	http.HandleFunc("/ws/", func(w http.ResponseWriter, r *http.Request) {
 		webSocketHandler(&root, w, r)
 	})
-	httpServer.ListenAndServe()
+	log.Fatal(httpServer.ListenAndServe())
 }
