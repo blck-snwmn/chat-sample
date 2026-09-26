@@ -28,7 +28,7 @@ func TestMutex(t *testing.T) {
 	root := newChatRoom()
 
 	wg := &sync.WaitGroup{}
-	for i := 0; i < expectedLen; i++ {
+	for i := range expectedLen {
 		wg.Add(1)
 		go func(counter int) {
 			defer wg.Done()
